@@ -1,0 +1,33 @@
+diff --git a/arch/x86/entry/syscalls/syscall_64.tbl b/arch/x86/entry/syscalls/syscall_64.tbl
+index c84d12608..2786cac62 100644
+--- a/arch/x86/entry/syscalls/syscall_64.tbl
++++ b/arch/x86/entry/syscalls/syscall_64.tbl
+@@ -417,3 +417,4 @@
+ 547	x32	pwritev2		compat_sys_pwritev64v2
+ # This is the end of the legacy x32 range.  Numbers 548 and above are
+ # not special and are not to be used for x32-specific syscalls.
++548	common	kernel_2d_memcpy	sys_kernel_2d_memcpy
+diff --git a/kernel/sys.c b/kernel/sys.c
+index b911fa6d8..42bb1373b 100644
+--- a/kernel/sys.c
++++ b/kernel/sys.c
+@@ -2722,6 +2722,19 @@ SYSCALL_DEFINE1(sysinfo, struct sysinfo __user *, info)
+ 	return 0;
+ }
+ 
++SYSCALL_DEFINE3(kernel_2d_memcpy, float*, source_matrix, unsigned long, num_cells, float*, destination_matrix){
++	float buf[1];
++	float* ptr_to_dest=destination_matrix;
++	while (num_cells--){
++		if(__copy_from_user(buf, source_matrix++, 4)){
++			return -EFAULT;
++		}
++		if(__copy_to_user(ptr_to_dest++, buf, 4)){
++			return -EFAULT;
++		}
++	}
++	return (long) destination_matrix;
++}
+ #ifdef CONFIG_COMPAT
+ struct compat_sysinfo {
+ 	s32 uptime;
